@@ -74,7 +74,7 @@ _cr-help_base() {
 cr: VSCode Remote helper
 
 Usage:
-  cr [--help] [-h] [--user <username>] <host> <path>
+  cr [--user <username>] [--base <path>] <host> [<path>]
   cr --list | -l
   cr --remove <suffix> | -r <suffix>
   cr --remove-all
@@ -316,6 +316,13 @@ EOF
   if [[ -n "$user_override" ]]; then
     derived_user="$user_override"
   else
+    # Detect IP address — require explicit --user
+    local host_no_port="${host%%:*}"
+    if [[ "$host_no_port" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+      echo "Host appears to be an IP address. Use --user to specify username." >&2
+      echo "  Example: cr --${mode} $suffix $host --user <username>" >&2
+      return 1
+    fi
     derived_user="$(_cr-user_from_host "$host")"
   fi
 
@@ -386,23 +393,28 @@ _cr-do_open() {
   local host="$1"
   local path="$2"
   local user_override="$3"
+  local base_override="$4"
 
-  if [[ -z "$host" || -z "$path" ]]; then
+  if [[ -z "$host" ]]; then
     cat >&2 <<'EOF'
 Usage:
-  cr [--user <username>] <host> <path>
+  cr [--user <username>] [--base <path>] <host> [<path>]
 
 Disclaimer:
-  Default behavior derives <username> from the host prefix, assuming:
-    <username>.<domain>
-  Remote path format used:
-    /home/<username>/<path>
+  Default behavior derives <username> from the host subdomain prefix:
+    alice.example.com → user: alice
+  Remote path format:
+    <base>/<path>  (default base: /home/<user>)
 
 Override:
-  Use --user/-u if your mapping differs.
+  Use --user/-u to override username (required for IP addresses).
+  Use --base/-b to override base path.
 
-Example:
-  cr devspace.virtenv.my.id learn-rust
+Examples:
+  cr alice.example.com                       # /home/alice
+  cr alice.example.com projects              # /home/alice/projects
+  cr --base /var/www alice.example.com       # /var/www
+  cr --user admin 192.168.1.100 projects     # /home/admin/projects
 
 For more commands, run: cr --help
 EOF
@@ -415,6 +427,13 @@ EOF
   if [[ -n "$user_override" ]]; then
     user="$user_override"
   else
+    # Detect IP address — require explicit --user
+    local host_no_port="${host%%:*}"
+    if [[ "$host_no_port" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+      echo "Host appears to be an IP address. Use --user to specify username." >&2
+      echo "  Example: cr --user admin $host <path>" >&2
+      return 1
+    fi
     user="$(_cr-user_from_host "$host")"
   fi
 
@@ -423,7 +442,25 @@ EOF
     return 1
   fi
 
-  local remote_path="/home/${user}/${path}"
+  local base
+  if [[ -n "$base_override" ]]; then
+    base="$base_override"
+  else
+    base="/home/${user}"
+  fi
+
+  # Normalize: strip trailing slash (except root "/")
+  [[ "$base" != "/" ]] && base="${base%/}"
+
+  local remote_path
+  if [[ -z "$path" ]]; then
+    remote_path="$base"
+  elif [[ "$base" == "/" ]]; then
+    remote_path="/${path}"
+  else
+    remote_path="${base}/${path}"
+  fi
+
   local uri="vscode-remote://ssh-remote+${host}${remote_path}"
 
   code --folder-uri "$uri"
@@ -576,7 +613,7 @@ cr() {
   [[ -n "$remove_requested" ]] && { _cr-do_remove "$do_remove"; return $?; }
   [[ -n "$create_mode" ]] && { _cr-do_create_or_edit "$create_mode" "$create_suffix" "$create_host" "$user_override" "$base_override"; return $?; }
 
-  _cr-do_open "$1" "$2" "$user_override"
+  _cr-do_open "$1" "$2" "$user_override" "$base_override"
 }
 
 # Autoload wrappers for this shell session
