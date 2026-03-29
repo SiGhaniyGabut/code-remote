@@ -5,20 +5,20 @@ Skip the repetitive typing when opening VSCode Remote SSH.
 Instead of typing:
 
 ```bash
-code --folder-uri "vscode-remote://ssh-remote+alice.example.com/home/alice/my-project"
+code --folder-uri "vscode-remote://ssh-remote+dev.example.com/home/dev/my-project"
 ```
 
 Just:
 
 ```bash
-cr alice.example.com my-project
+cr dev.example.com my-project
 ```
 
 Or create a wrapper for hosts you use often:
 
 ```bash
-cr --create dev alice.example.com
-cr-dev my-project
+cr --create mydev dev.example.com
+cr-mydev my-project
 ```
 
 ## Install
@@ -44,17 +44,36 @@ source ~/.bashrc
 ### Basic
 
 ```bash
-cr <host> <path>
+cr [options] <host> [<path>]
 ```
 
-Opens `vscode-remote://ssh-remote+<host>/home/<user>/<path>`.
+Opens `vscode-remote://ssh-remote+<host>/<base>/<path>`.
 
-Username is derived from the host subdomain (`alice.example.com` → `alice`).
-
-Override if needed:
+Username is derived from the first segment of the hostname (before the first dot).
 
 ```bash
-cr --user admin server.example.com projects
+cr example.com                        # user: example → /home/example
+cr dev.example.com projects           # user: dev → /home/dev/projects
+```
+
+For IP addresses, `--user` is required:
+
+```bash
+cr --user admin 192.168.1.100              # /home/admin
+cr --user admin 192.168.1.100 projects     # /home/admin/projects
+```
+
+Override user:
+
+```bash
+cr --user deploy staging.server.local app  # /home/deploy/app
+```
+
+Override base path:
+
+```bash
+cr --base /var/www dev.example.com             # /var/www
+cr --base /var/www dev.example.com mysite      # /var/www/mysite
 ```
 
 ### Wrappers
@@ -62,8 +81,8 @@ cr --user admin server.example.com projects
 Create shortcuts for frequently used hosts:
 
 ```bash
-cr --create dev alice.example.com
-cr-dev my-project
+cr --create mydev dev.example.com
+cr-mydev my-project
 ```
 
 With custom user or base path:
@@ -76,10 +95,10 @@ cr-web my-site   # opens /var/www/my-site
 Manage wrappers:
 
 ```bash
-cr --list                  # list all
-cr --edit dev new.host.com # update
-cr --remove dev            # delete one
-cr --remove-all            # delete all
+cr --list                    # list all
+cr --edit mydev new.host.com # update
+cr --remove mydev            # delete one
+cr --remove-all              # delete all
 ```
 
 ### Help
