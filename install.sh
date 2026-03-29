@@ -3,7 +3,7 @@
 set -e
 
 INSTALL_DIR="$HOME/.local/share/code-remote"
-SCRIPT_URL="https://raw.githubusercontent.com/SiGhaniyGabut/cr/main/code-remote.sh"
+SCRIPT_URL="https://raw.githubusercontent.com/SiGhaniyGabut/code-remote/main/code-remote.sh"
 BASHRC="$HOME/.bashrc"
 
 echo "Installing cr..."
