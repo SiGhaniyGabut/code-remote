@@ -24,7 +24,7 @@ cr-dev my-project
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SiGhaniyGabut/cr/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/SiGhaniyGabut/code-remote/main/install.sh | bash
 ```
 
 Or manually:
@@ -32,7 +32,7 @@ Or manually:
 ```bash
 mkdir -p ~/.local/share/code-remote
 curl -o ~/.local/share/code-remote/code-remote.sh \
-  https://raw.githubusercontent.com/SiGhaniyGabut/cr/main/code-remote.sh
+  https://raw.githubusercontent.com/SiGhaniyGabut/code-remote/main/code-remote.sh
 
 # Add to ~/.bashrc
 echo 'source ~/.local/share/code-remote/code-remote.sh' >> ~/.bashrc
